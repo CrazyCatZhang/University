@@ -4,7 +4,7 @@
 			<view class="top-bar-left"><image src="../../static/images/img/four.png" mode=""></image></view>
 			<view class="top-bar-center"><image class="logo" src="../../static/images/index/logo.png" mode=""></image></view>
 			<view class="top-bar-right">
-				<view class="search"><image src="../../static/images/index/search.png" mode=""></image></view>
+				<view class="search" @tap="toSearch"><image src="../../static/images/index/search.png" mode=""></image></view>
 				<view class="add"><image src="../../static/images/index/add.png" mode=""></image></view>
 			</view>
 		</view>
@@ -59,13 +59,18 @@ export default {
 		changeTime: function(date) {
 			return method.dateTime(date);
 		},
-
 		getFriends: function() {
 			this.friends = datas.friends();
 			for (var i = 0; i < this.friends.length; i++) {
 				this.friends[i].imgurl = '../../static/images/img/' + this.friends[i].imgurl;
 			}
 			console.log(this.friends);
+		},
+		//跳转到搜索界面
+		toSearch: function() {
+			uni.navigateTo({
+				url: '../search/search',
+			});
 		}
 	}
 };
