@@ -26,15 +26,15 @@ export default {
 			}
 			return h + ':' + m;
 		}
-		
-		if(D + 1 === nD && M === nM && Y === nY) {
+
+		if (D + 1 === nD && M === nM && Y === nY) {
 			if (h < 10) {
 				h = '0' + h;
 			}
 			if (m < 10) {
 				m = '0' + m;
 			}
-			return '前天' + h + ':' + m;
+			return '昨天' + h + ':' + m;
 		} else {
 			return Y + '/' + M + '/' + D;
 		}
