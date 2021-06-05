@@ -103,41 +103,7 @@ export default {
 </script>
 
 <style lang="scss">
-.content {
-	padding-top: var(--status-bar-height);
-}
-
-.top-bar {
-	position: fixed;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 88rpx;
-	z-index: 1000;
-	// box-sizing: border-box;
-	padding-top: var(--status-bar-height);
-	background: $uni-bg-color;
-
-	.top-bar-left {
-		float: left;
-		padding-left: 32rpx;
-		width: 88rpx;
-		height: 88rpx;
-
-		.text {
-			font-size: $uni-font-size-lg;
-			font-weight: 500;
-			color: $uni-text-color;
-			line-height: 88rpx;
-		}
-
-		.back-img {
-			width: 26rpx;
-			height: 46rpx;
-			margin-top: 21rpx;
-		}
-	}
-}
+@import '../../commons/css/common.scss';
 
 .logo {
 	text-align: center;
