@@ -27,7 +27,7 @@
 			<view class="friends">
 				<view class="friends-list" v-for="(item, index) in friends" :key="index">
 					<view class="friends-list-l">
-						<text class="tip">{{ item.tip }}</text>
+						<text class="tip" v-if="item.tip > 0">{{ item.tip }}</text>
 						<image :src="item.imgurl" mode=""></image>
 					</view>
 					<view class="friends-list-r">
@@ -74,18 +74,15 @@ export default {
 <style lang="scss">
 @import '../../commons/css/common.scss';
 
-.content {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding-top: var(--status-bar-height);
-	padding-bottom: $uni-spacing-col-base;
+.top-bar {
+	background: rgba(255, 255, 255, 0.96);
+	border-bottom: 1px solid $uni-border-color;
 }
 
 .main {
 	// width: calc(100% - 32rpx);
 	padding-top: 104rpx;
+	padding-bottom: $uni-spacing-col-base;
 	// border: 1px solid red;
 }
 
@@ -111,11 +108,12 @@ export default {
 		.tip {
 			position: absolute;
 			z-index: 10;
-			top: -6rpx;
+			top: -8rpx;
 			left: 68rpx;
-			min-width: 36rpx;
+			min-width: 20rpx;
+			padding: 0 8rpx;
 			background-color: $uni-color-warning;
-			border-radius: $uni-border-radius-circle;
+			border-radius: 18rpx;
 			font-size: $uni-font-size-sm;
 			color: $uni-text-color-inverse;
 			line-height: 36rpx;
