@@ -1,7 +1,7 @@
 <template>
 	<view class="content">
 		<view class="top-bar">
-			<view class="top-bar-left" @tap="toLogin()"><image src="../../static/images/common/back.png" mode="" class="back-img"></image></view>
+			<view class="top-bar-left" @tap="backOne"><image src="../../static/images/common/back.png" mode="" class="back-img"></image></view>
 		</view>
 		<view class="logo"><image src="../../static/images/sign/logo1.png" mode=""></image></view>
 		<view class="main">
@@ -93,7 +93,7 @@ export default {
 			}
 		},
 
-		toLogin: function() {
+		backOne: function() {
 			uni.navigateBack({
 				delta: 1
 			});
