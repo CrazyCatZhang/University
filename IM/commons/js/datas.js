@@ -11,7 +11,7 @@ export default {
 			{
 				id: 2,
 				imgurl: 'one.png',
-				tip: 2,
+				tip: 2223,
 				name: '山川',
 				time: new Date(),
 				news: 'I am leaving this comment so that even after months and years later ',
