@@ -8,12 +8,10 @@
 			<view class="title">登录</view>
 			<view class="slogan">您好，欢迎来到yike！</view>
 			<view class="inputs">
-				<input type="text" placeholder="用户名/邮箱" class="user" placeholder-style="color:#aaa;font-weight:400;" @blur="getUser"/>
-				<input type="password" placeholder="密码" class="pwd" placeholder-style="color:#aaa;font-weight:400;" @blur="getPwd"/>
+				<input type="text" placeholder="用户名/邮箱" class="user" placeholder-style="color:#aaa;font-weight:400;" @blur="getUser" />
+				<input type="password" placeholder="密码" class="pwd" placeholder-style="color:#aaa;font-weight:400;" @blur="getPwd" />
 			</view>
-			<view class="tips">
-				用户名或密码错误！！！
-			</view>
+			<view class="tips">用户名或密码错误！！！</view>
 		</view>
 		<view class="submit" @tap="login">登录</view>
 	</view>
@@ -30,21 +28,21 @@ export default {
 	methods: {
 		toRegistered: function() {
 			uni.navigateTo({
-			    url: '../registered/registered'
+				url: '../registered/registered'
 			});
 		},
-		
+
 		getUser: function(e) {
 			this.user = e.detail.value;
 		},
-		
+
 		getPwd: function(e) {
 			this.pwd = e.detail.value;
 		},
-		
+
 		login: function() {
-			if(this.user && this.pwd) {
-				console.log("Submit");
+			if (this.user && this.pwd) {
+				console.log('Submit');
 			}
 		}
 	}
@@ -52,33 +50,7 @@ export default {
 </script>
 
 <style lang="scss">
-.content {
-	padding-top: var(--status-bar-height);
-}
-
-.top-bar {
-	position: fixed;
-	left: 0;
-	top: 0;
-	width: 100%;
-	height: 88rpx;
-	z-index: 1000;
-	// box-sizing: border-box;
-	padding-top: var(--status-bar-height);
-	background: $uni-bg-color;
-
-	.top-bar-right {
-		float: right;
-		padding-right: 32rpx;
-
-		.text {
-			font-size: $uni-font-size-lg;
-			font-weight: 500;
-			color: $uni-text-color;
-			line-height: 88rpx;
-		}
-	}
-}
+@import '../../commons/css/common.scss';
 
 .logo {
 	text-align: center;
@@ -119,7 +91,7 @@ export default {
 			border-bottom: 1px solid $uni-border-color;
 		}
 	}
-	
+
 	.tips {
 		float: left;
 		font-size: $uni-font-size-lg;
@@ -133,7 +105,7 @@ export default {
 	height: 96rpx;
 	margin: 0 auto;
 	background-color: $uni-color-primary;
-	box-shadow: 0 50rpx 32rpx -36rpx rgba(255,228,49,0.4);
+	box-shadow: 0 50rpx 32rpx -36rpx rgba(255, 228, 49, 0.4);
 	border-radius: 48rpx;
 	font-size: $uni-font-size-lg;
 	font-weight: 500;
