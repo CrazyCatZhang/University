@@ -3,7 +3,7 @@
 		{
 			"path": "pages/index/index",
 			"style": {
-				// "navigationBarTitleText": "uni-app",
+				// "navigationBarTitleText": "uni-app"
 				"navigationStyle": "custom"
 			}
 		}, {
@@ -31,7 +31,15 @@
 			}
 
 		}
-	],
+	    ,{
+            "path" : "pages/userdetails/userdetails",
+            "style" :                                                                                    
+            {
+                "navigationStyle": "custom"
+            }
+            
+        }
+    ],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "uni-app",
