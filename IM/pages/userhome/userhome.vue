@@ -7,13 +7,13 @@
 			</view>
 		</view>
 		<view class="bg">
-			<view class="bg-white"></view>
+			<view class="bg-white" :animation="animationData4"></view>
 			<image src="../../static/images/img/three.png" mode="aspectFill" class="bg-img"></image>
 		</view>
 		<view class="main">
 			<view class="user-header">
-				<view class="sex" :style="{ background: sexBg }"><image src="../../static/images/userhome/female.png" mode=""></image></view>
-				<image src="../../static/images/img/three.png" mode="aspectFill" class="user-img"></image>
+				<view class="sex" :style="{ background: sexBg }" :animation="animationData3"><image src="../../static/images/userhome/female.png" mode=""></image></view>
+				<image src="../../static/images/img/three.png" mode="aspectFill" class="user-img" :animation="animationData2"></image>
 			</view>
 			<view class="user-imf">
 				<view class="name">{{ user.name }}</view>
@@ -21,14 +21,14 @@
 				<view class="intro">{{ user.intro }}</view>
 			</view>
 		</view>
-		<view class="bottom-bar"><view class="bottom-btn">加为好友</view></view>
-		<view class="add-misg" :style="{ height: addHeight + 'px' }">
+		<view class="bottom-bar"><view class="bottom-btn btn1" @tap="addFriendAnimat">加为好友</view></view>
+		<view class="add-misg" :style="{ height: addHeight + 'px', bottom: -addHeight + 'px' }" :animation="animationData">
 			<view class="name">{{ user.name }}</view>
 			<textarea :value="myname + '请求添加好友~'" maxlength="120" placeholder="" class="add-main" />
 		</view>
-		<view class="add-bt">
-			<view class="close">取消</view>
-			<view class="send">发送</view>
+		<view class="add-bt bottom-bar" :animation="animationData1">
+			<view class="close btn1" @tap="addFriendAnimat">取消</view>
+			<view class="send btn1">发送</view>
 		</view>
 	</view>
 </template>
@@ -37,9 +37,15 @@
 export default {
 	data() {
 		return {
-			sexBg: 'rgba(255, 93, 91, 1)',
+			sexBg: 'rgba(255, 93, 91, 1)', //性别颜色
 			myname: '春雨',
-			addHeight: '',
+			addHeight: '', //add版块高度
+			animationData: {}, //动画
+			animationData1: {}, //动画
+			animationData2: {}, //动画
+			animationData3: {}, //动画
+			animationData4: {}, //动画
+			isAdd: false,
 			user: {
 				name: '秋风',
 				nick: '秋之果',
@@ -57,6 +63,7 @@ export default {
 				delta: 1
 			});
 		},
+		//获取页面高度
 		getElementStyle: function() {
 			const query = uni.createSelectorQuery().in(this);
 			query
@@ -67,6 +74,56 @@ export default {
 					this.addHeight = data.height - 186;
 				})
 				.exec();
+		},
+		//添加好友动画
+		addFriendAnimat: function() {
+			this.isAdd = !this.isAdd;
+			var animation = uni.createAnimation({
+				duration: 300,
+				timingFunction: 'ease'
+			});
+			var animation1 = uni.createAnimation({
+				duration: 300,
+				timingFunction: 'ease'
+			});
+			var animation2 = uni.createAnimation({
+				duration: 300,
+				timingFunction: 'ease'
+			});
+			var animation3 = uni.createAnimation({
+				duration: 300,
+				timingFunction: 'ease'
+			});
+			var animation4 = uni.createAnimation({
+				duration: 300,
+				timingFunction: 'ease'
+			});
+
+			if (this.isAdd) {
+				animation.bottom(0).step();
+				animation1.bottom(0).step();
+				animation2
+					.width(120)
+					.height(120)
+					.step();
+				animation3.opacity(0).step();
+				animation4.backgroundColor('rgba(255,228,49,0.6)').step();
+			} else {
+				animation.bottom(-this.addHeight).step();
+				animation1.bottom(-100).step();
+				animation2
+					.width(200)
+					.height(200)
+					.step();
+				animation3.opacity(1).step();
+				animation4.backgroundColor('rgba(255,228,49,0)').step();
+			}
+
+			this.animationData = animation.export();
+			this.animationData1 = animation1.export();
+			this.animationData2 = animation2.export();
+			this.animationData3 = animation3.export();
+			this.animationData4 = animation4.export();
 		}
 	}
 };
@@ -102,7 +159,7 @@ export default {
 }
 
 .main {
-	padding-top: 148rpx;
+	padding-top: 240rpx;
 	text-align: center;
 
 	.user-header {
@@ -130,10 +187,12 @@ export default {
 
 		.user-img {
 			z-index: 10;
+			top: 0;
 			width: 400rpx;
 			height: 400rpx;
 			border-radius: 48rpx;
 			border: 6rpx solid rgba(255, 255, 255, 1);
+			box-shadow: 0 36rpx 40rpx 0 rgba(39, 40, 50, 0.1);
 		}
 	}
 
@@ -163,27 +222,15 @@ export default {
 }
 
 .bottom-bar {
-	position: fixed;
-	bottom: 0;
-	width: 100%;
-	height: 104rpx;
-	box-sizing: border-box;
-	padding: 12rpx $uni-spacing-col-base;
-
 	.bottom-btn {
-		text-align: center;
-		height: 80rpx;
-		line-height: 80rpx;
-		font-size: $uni-font-size-lg;
+		margin: 0 $uni-spacing-col-base;
 		background-color: $uni-color-primary;
-		color: $uni-text-color;
-		border-radius: $uni-border-radius-sm;
 	}
 }
 
 .add-misg {
 	position: fixed;
-	bottom: 0;
+	// bottom: 0;
 	width: 100%;
 	box-sizing: border-box;
 	padding: 0 56rpx;
@@ -211,36 +258,21 @@ export default {
 }
 
 .add-bt {
-	position: fixed;
-	bottom: 0;
-	width: 100%;
-	height: 104rpx;
-	box-sizing: border-box;
-	padding: 12rpx $uni-spacing-col-base;
+	bottom: -200rpx;
+	z-index: 100;
 	display: flex;
 
 	.close {
 		// flex: 0;
-		text-align: center;
 		width: 172rpx;
-		height: 80rpx;
-		line-height: 80rpx;
-		font-size: $uni-font-size-lg;
 		background-color: $uni-bg-color-hover;
-		color: $uni-text-color;
-		border-radius: $uni-border-radius-sm;
+		margin-left: $uni-spacing-col-base;
 	}
 
 	.send {
-		margin-left: $uni-spacing-col-base;
+		margin: 0 $uni-spacing-col-base;
 		flex: auto;
-		text-align: center;
-		height: 80rpx;
-		line-height: 80rpx;
-		font-size: $uni-font-size-lg;
 		background-color: $uni-color-primary;
-		color: $uni-text-color;
-		border-radius: $uni-border-radius-sm;
 	}
 }
 </style>
