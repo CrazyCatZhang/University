@@ -1,7 +1,7 @@
 <template>
 	<view class="content">
 		<view class="top-bar">
-			<view class="top-bar-left"><image src="../../static/images/img/four.png" mode=""></image></view>
+			<navigator url="../userhome/userhome?id=aaa" hover-class="none" class="top-bar-left"><image src="../../static/images/img/four.png" mode=""></image></navigator>
 			<view class="top-bar-center"><image class="logo" src="../../static/images/index/logo.png" mode=""></image></view>
 			<view class="top-bar-right">
 				<view class="search" @tap="toSearch"><image src="../../static/images/index/search.png" mode=""></image></view>
@@ -69,7 +69,7 @@ export default {
 		//跳转到搜索界面
 		toSearch: function() {
 			uni.navigateTo({
-				url: '../search/search',
+				url: '../search/search'
 			});
 		}
 	}
