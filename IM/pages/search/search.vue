@@ -11,7 +11,9 @@
 			<view class="search-user result">
 				<view class="title" v-if="userarr.length > 0">用户</view>
 				<view class="list user" v-for="(item, index) in userarr" :key="index">
-					<image :src="item.imgurl" mode=""></image>
+					<navigator url="../userhome/userhome?id=aaa" hover-class="none">
+						<image :src="item.imgurl" mode=""></image>
+					</navigator>
 					<view class="names">
 						<view class="name" v-html="item.name"></view>
 						<view class="email" v-html="item.email"></view>
@@ -97,7 +99,7 @@ export default {
 	.search-div {
 		position: absolute;
 		left: 0;
-		top: 0;
+		// top: 0;
 		width: 100%;
 		z-index: -1;
 		box-sizing: border-box;
