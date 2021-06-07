@@ -30,16 +30,20 @@
 				"navigationStyle": "custom"
 			}
 
+		}, {
+			"path": "pages/userdetails/userdetails",
+			"style": {
+				"navigationStyle": "custom"
+			}
+
+		}, {
+			"path": "pages/friendrequest/friendrequest",
+			"style": {
+				"navigationStyle": "custom"
+			}
+
 		}
-	    ,{
-            "path" : "pages/userdetails/userdetails",
-            "style" :                                                                                    
-            {
-                "navigationStyle": "custom"
-            }
-            
-        }
-    ],
+	],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
 		"navigationBarTitleText": "uni-app",
