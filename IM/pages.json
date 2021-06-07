@@ -42,6 +42,12 @@
 				"navigationStyle": "custom"
 			}
 
+		}, {
+			"path": "pages/chatroom/chatroom",
+			"style": {
+				"navigationStyle": "custom"
+			}
+
 		}
 	],
 	"globalStyle": {
