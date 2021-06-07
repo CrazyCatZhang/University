@@ -15,23 +15,20 @@
 					</view>
 					<view class="more"><image src="../../static/images/common/more.png" mode="aspectFit"></image></view>
 				</view>
-				<view class="row">
+				<view class="row" @tap="modify('签名', dataArr.sign, false)">
 					<view class="title">签名</view>
-					<view class="cont">
-						有时会讨厌不甘平庸却又不好好努力的自己 觉得自己不够好 羡慕别人闪闪发光 我们试着长大 做努力爬的蜗牛或坚持飞的笨鸟 一路跌跌撞撞，然后遍体鳞伤 总有一天
-						你会站在最亮的地方 活成自己曾经渴望的模样
-					</view>
+					<view class="cont">{{ dataArr.sign }}</view>
 					<view class="more"><image src="../../static/images/common/more.png" mode="aspectFit"></image></view>
 				</view>
 				<view class="row">
 					<view class="title">注册</view>
-					<view class="cont">2020-04-20 23:23:23</view>
+					<view class="cont">{{ changeTime(dataArr.registered) }}</view>
 				</view>
 			</view>
 			<view class="column">
-				<view class="row">
+				<view class="row" @tap="modify('昵称', dataArr.name, false)">
 					<view class="title">昵称</view>
-					<view class="cont">好多鱼</view>
+					<view class="cont">{{ dataArr.name }}</view>
 					<view class="more"><image src="../../static/images/common/more.png" mode="aspectFit"></image></view>
 				</view>
 				<view class="row">
@@ -52,14 +49,14 @@
 					</view>
 					<view class="more"><image src="../../static/images/common/more.png" mode="aspectFit"></image></view>
 				</view>
-				<view class="row">
+				<view class="row" @tap="modify('电话', dataArr.tell, false)">
 					<view class="title">电话</view>
-					<view class="cont">1823459387</view>
+					<view class="cont">{{ dataArr.tell }}</view>
 					<view class="more"><image src="../../static/images/common/more.png" mode="aspectFit"></image></view>
 				</view>
-				<view class="row">
+				<view class="row" @tap="modify('邮箱', dataArr.mail, true)">
 					<view class="title">邮箱</view>
-					<view class="cont">1dasjlda@163.com</view>
+					<view class="cont">{{ dataArr.mail }}</view>
 					<view class="more"><image src="../../static/images/common/more.png" mode="aspectFit"></image></view>
 				</view>
 			</view>
@@ -72,11 +69,23 @@
 			</view>
 			<view class="bt2">退出登录</view>
 		</view>
+		<view class="modify" :style="{ bottom: -widHeight + 'px' }" :animation="animationData">
+			<view class="modify-header">
+				<view class="close" @tap="modify">取消</view>
+				<view class="title">签名</view>
+				<view class="define" @tap="modifySubmit">确定</view>
+			</view>
+			<view class="modify-main">
+				<input type="text" v-model="pwd" class="modify-pwd" placeholder="请输入原密码" placeholder-style="color:#aaa;font-weight:400;" :style="{ display: ispwd }" />
+				<textarea value="" placeholder="" v-model="data" class="modify-content" />
+			</view>
+		</view>
 	</view>
 </template>
 
 <script>
 import ImageCropper from '@/components/ling-imgcropper/ling-imgcropper.vue';
+import myfun from '../../commons/js/method.js';
 
 export default {
 	data() {
@@ -84,11 +93,28 @@ export default {
 			format: true
 		});
 		return {
+			dataArr: {
+				name: '小明',
+				sign:
+					'有时会讨厌不甘平庸却又不好好努力的自己 觉得自己不够好 羡慕别人闪闪发光 我们试着长大 做努力爬的蜗牛或坚持飞的笨鸟 一路跌跌撞撞，然后遍体鳞伤 总有一天你会站在最亮的地方 活成自己曾经渴望的模样',
+				registered: new Date(),
+				sex: '男',
+				birth: '1998-04-12',
+				tell: '124142351515',
+				mail: 'safadda@163.com'
+			},
 			cropFilePath: '../../static/images/img/three.png',
 			array: ['男', '女'],
 			index: 0,
 			date: currentDate,
-			tempFilePath: ''
+			tempFilePath: '',
+			modifyTitle: '', //修改标题
+			data: '修改的内容', //修改签名内容
+			pwd: '', //原密码
+			ispwd: false, //是否需要原密码
+			animationData: {}, //动画
+			isModify: false, //动画开关
+			widHeight: '' //页面高度
 		};
 	},
 	computed: {
@@ -100,11 +126,18 @@ export default {
 		}
 	},
 	components: { ImageCropper },
+	onReady: function() {
+		this.getElementStyle();
+	},
 	methods: {
 		backOne: function() {
 			uni.navigateBack({
 				delta: 1
 			});
+		},
+		//时间处理
+		changeTime: function(date) {
+			return myfun.detailTime(date);
 		},
 		//性别选择器
 		bindPickerChange: function(e) {
@@ -166,6 +199,44 @@ export default {
 		cancel() {
 			console.log('canceled');
 			this.tempFilePath = '';
+		},
+		//获取页面高度
+		getElementStyle: function() {
+			const query = uni.createSelectorQuery().in(this);
+			query
+				.select('.modify')
+				.boundingClientRect(data => {
+					this.widHeight = data.height;
+				})
+				.exec();
+		},
+
+		//修改项弹框
+		modify: function(type, data, ispwd) {
+			if (ispwd) {
+				this.ispwd = 'block';
+			} else {
+				this.ispwd = 'none';
+			}
+			this.modifyTitle = type;
+			this.data = data;
+			this.isModify = !this.isModify;
+			var animation = uni.createAnimation({
+				duration: 300,
+				timingFunction: 'ease'
+			});
+
+			if (this.isModify) {
+				animation.bottom(0).step();
+			} else {
+				animation.bottom(-this.widHeight).step();
+			}
+
+			this.animationData = animation.export();
+		},
+		//弹框修改确定
+		modifySubmit: function() {
+			this.modify();
 		}
 	}
 };
@@ -250,6 +321,80 @@ export default {
 		font-size: $uni-font-size-lg;
 		color: $uni-color-warning;
 		line-height: 88rpx;
+	}
+}
+
+//修改弹框
+.modify {
+	position: fixed;
+	z-index: 1002;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: #ffffff;
+
+	.modify-header {
+		width: 100%;
+		height: 88rpx;
+		padding-top: var(--status-bar-height);
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		border-bottom: 1px solid $uni-border-color;
+
+		.close {
+			padding: $uni-spacing-col-base;
+			font-size: $uni-font-size-lg;
+			color: $uni-text-color;
+			line-height: 44rpx;
+		}
+
+		.title {
+			flex: auto;
+			text-align: center;
+			font-size: 40rpx;
+			color: $uni-text-color;
+			line-height: 88rpx;
+		}
+
+		.define {
+			padding-right: $uni-spacing-col-base;
+			font-size: $uni-font-size-lg;
+			color: $uni-color-success;
+			line-height: 44rpx;
+		}
+	}
+
+	.modify-main {
+		display: flex;
+		padding: $uni-spacing-col-base;
+		flex-direction: column;
+
+		.modify-pwd {
+			margin-bottom: $uni-spacing-col-base;
+			padding: 0 20rpx;
+			box-sizing: border-box;
+			width: 100%;
+			height: 88rpx;
+			background-color: $uni-bg-color-grey;
+			border-radius: $uni-border-radius-base;
+			font-size: $uni-font-size-lg;
+			color: $uni-text-color;
+			line-height: 88rpx;
+		}
+
+		.modify-content {
+			padding: 16rpx 20rpx;
+			box-sizing: border-box;
+			flex: auto;
+			width: 100%;
+			height: 386rpx;
+			background-color: $uni-bg-color-grey;
+			border-radius: $uni-border-radius-base;
+			font-size: $uni-font-size-lg;
+			color: $uni-text-color;
+			line-height: 44rpx;
+		}
 	}
 }
 </style>
