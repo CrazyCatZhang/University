@@ -112,8 +112,8 @@ export default {
 				animation.bottom(-this.addHeight).step();
 				animation1.bottom(-100).step();
 				animation2
-					.width(200)
-					.height(200)
+					.width()
+					.height()
 					.step();
 				animation3.opacity(1).step();
 				animation4.backgroundColor('rgba(255,228,49,0)').step();
