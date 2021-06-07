@@ -82,6 +82,14 @@ export default {
 .top-bar {
 	background: rgba(255, 255, 255, 0.96);
 	border-bottom: 1px solid $uni-border-color;
+
+	.top-bar-right {
+		image {
+			padding: 18rpx 0 0 18rpx;
+			width: 52rpx;
+			height: 52rpx;
+		}
+	}
 }
 
 .main {
