@@ -184,7 +184,7 @@ export default {
 		},
 		//音频处理
 		//开始录音
-		touchstart: function() {
+		touchstart: function(e) {
 			console.log('开始');
 			//点击时Y轴位置
 			this.pageY = e.changedTouches[0].pageY;
@@ -203,8 +203,8 @@ export default {
 		},
 		//结束录音
 		touchend: function() {
-			console.log('结束');
-			this.voicebg = true;
+			// console.log('结束');
+			// this.voicebg = true;
 			clearInterval(this.timer);
 			recorderManager.stop();
 			recorderManager.onStop(res => {
