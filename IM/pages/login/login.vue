@@ -8,10 +8,10 @@
 			<view class="title">登录</view>
 			<view class="slogan">您好，欢迎来到yike！</view>
 			<view class="inputs">
-				<input type="text" placeholder="用户名/邮箱" class="user" placeholder-style="color:#aaa;font-weight:400;" @blur="getUser" />
-				<input type="password" placeholder="密码" class="pwd" placeholder-style="color:#aaa;font-weight:400;" @blur="getPwd" />
+				<input type="text" v-model="user" placeholder="用户名/邮箱" class="user" placeholder-style="color:#aaa;font-weight:400;" />
+				<input type="password" v-model="pwd" placeholder="密码" class="pwd" placeholder-style="color:#aaa;font-weight:400;" />
 			</view>
-			<view class="tips">用户名或密码错误！！！</view>
+			<view class="tips" :style="{ display: mon }">用户名或密码错误！！！</view>
 		</view>
 		<view class="submit" @tap="login">登录</view>
 	</view>
@@ -22,8 +22,33 @@ export default {
 	data() {
 		return {
 			user: '',
-			pwd: ''
+			pwd: '',
+			mon: 'none'
 		};
+	},
+	onLoad: function(e) {
+		if (e.user) {
+			this.user = e.user;
+			uni.showToast({
+				title: '注册成功请登录',
+				icon: 'none',
+				duration: 2000
+			});
+		} else if (e.name) {
+			this.user = e.name;
+			uni.showToast({
+				title: '登录过期请重新登录',
+				icon: 'none',
+				duration: 2000
+			});
+		} else if (e.cgpwd) {
+			this.user = e.cgpwd;
+			uni.showToast({
+				title: '登录过期请重新登录',
+				icon: 'none',
+				duration: 2000
+			});
+		}
 	},
 	methods: {
 		toRegistered: function() {
@@ -32,17 +57,46 @@ export default {
 			});
 		},
 
-		getUser: function(e) {
-			this.user = e.detail.value;
-		},
-
-		getPwd: function(e) {
-			this.pwd = e.detail.value;
-		},
-
 		login: function() {
 			if (this.user && this.pwd) {
-				console.log('Submit');
+				uni.request({
+					url: this.serverUrl + '/signin/match',
+					data: {
+						data: this.user,
+						pwd: this.pwd
+					},
+					method: 'POST',
+					success: data => {
+						let status = data.data.status;
+						if (status == 200) {
+							//登录成功
+							let res = data.data.back;
+							this.mon = 'none';
+							//本地存储用户信息
+							try {
+								uni.setStorageSync('user', { id: res.id, name: res.name, imgurl: res.imgurl, token: res.token });
+							} catch (e) {
+								// error
+								console.log('数据存储出错');
+							}
+
+							uni.navigateTo({
+								url: '../index/index'
+							});
+						} else if (status == 400) {
+							//匹配失败
+							this.mon = 'block';
+							this.pwd = '';
+						} else if (status == 500) {
+							//服务器失败
+							uni.showToast({
+								title: '服务器出错啦！',
+								icon: 'none',
+								duration: 2000
+							});
+						}
+					}
+				});
 			}
 		}
 	}
