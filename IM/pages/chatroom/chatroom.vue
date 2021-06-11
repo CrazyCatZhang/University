@@ -2,10 +2,12 @@
 	<view class="content">
 		<view class="top-bar">
 			<view class="top-bar-left" @tap="backOne"><image src="../../static/images/common/back.png" mode="" class="back-img"></image></view>
-			<view class="top-bar-center"><view class="title">小明</view></view>
+			<view class="top-bar-center">
+				<view class="title">{{ fname }}</view>
+			</view>
 			<view class="top-bar-right">
 				<view class="pice"></view>
-				<view class="group-img"><image src="../../static/images/img/three.png" mode=""></image></view>
+				<view class="group-img" v-if="type == 1"><image :src="fimgurl" mode=""></image></view>
 			</view>
 		</view>
 		<scroll-view class="chat" scroll-y="true" :scroll-with-animation="swanititon" :scroll-into-view="scrollToView" @scrolltoupper="nextPage">
@@ -13,9 +15,9 @@
 				<view class="loading" :class="{ displaynone: isloading }">
 					<image src="../../static/images/common/loading.png" mode="" class="loading-img" :animation="animationData"></image>
 				</view>
-				<view class="chat-ls" v-for="(item, index) in msgs" :key="index" :id="'msg' + item.tip">
+				<view class="chat-ls" v-for="(item, index) in msgs" :key="index" :id="'msg' + item.id">
 					<view class="chat-time" v-if="item.time != ''">{{ changeTime(item.time) }}</view>
-					<view class="msg-m msg-left" v-if="item.id != 'b'">
+					<view class="msg-m msg-left" v-if="item.fromId != uid">
 						<image :src="item.imgurl" mode="" class="user-img"></image>
 						<view class="message" v-if="item.types == 0">
 							<view class="msg-text">{{ item.message }}</view>
@@ -36,7 +38,7 @@
 							</view>
 						</view>
 					</view>
-					<view class="msg-m msg-right" v-if="item.id == 'b'">
+					<view class="msg-m msg-right" v-if="item.fromId == uid">
 						<image :src="item.imgurl" mode="" class="user-img"></image>
 						<view class="message" v-if="item.types == 0">
 							<view class="msg-text">{{ item.message }}</view>
@@ -76,27 +78,60 @@ const innerAudioContext = uni.createInnerAudioContext();
 export default {
 	data() {
 		return {
+			uid: '',
+			uimgurl: '',
+			token: '',
+			uname: '',
+			fid: '',
+			fname: '',
+			fimgurl: '',
+			type: '',
 			msgs: [],
 			imgMsg: [],
 			scrollToView: '',
-			oldTime: new Date(),
+			oldTime: 0,
 			inputh: '72',
 			animationData: {},
 			nowpage: 0,
+			pagesize: 10,
 			loading: '',
 			isloading: true,
 			swanititon: true,
 			beginloading: true
 		};
 	},
-	onLoad: function() {
-		this.getMsg(this.nowpage);
-		// this.nextPage();
+	onLoad: function(e) {
+		this.fid = e.id;
+		this.fname = e.name;
+		this.type = e.type;
+		this.fimgurl = e.img;
+		this.getStorage();
+		this.getMsg();
+		this.receiveSocketMsg();
 	},
 	components: {
 		submit
 	},
 	methods: {
+		//获取登录成功的本地缓存数据
+		getStorage: function() {
+			try {
+				const value = uni.getStorageSync('user');
+				if (value) {
+					this.uid = value.id;
+					this.uimgurl = this.serverUrl + value.imgurl;
+					this.token = value.token;
+					this.uname = value.name;
+				} else {
+					//如果没有数据缓存就跳转到登录界面去
+					uni.navigateTo({
+						url: '../login/login'
+					});
+				}
+			} catch (e) {
+				// error
+			}
+		},
 		backOne: function() {
 			uni.navigateBack({
 				delta: 1
@@ -107,7 +142,91 @@ export default {
 			return myfun.dateTime1(date);
 		},
 		//获取聊天数据
-		getMsg: function(page) {
+		getMsg: function() {
+			console.log(this.uid);
+			console.log(this.fid);
+			uni.request({
+				url: this.serverUrl + '/chat/chatmsg',
+				data: {
+					uid: this.uid,
+					fid: this.fid,
+					nowPage: this.nowpage,
+					pageSize: this.pagesize,
+					token: this.token
+				},
+				method: 'POST',
+				success: data => {
+					let status = data.data.status;
+					// console.log(status);
+					if (status == 200) {
+						let msg = data.data.result;
+						// console.log(res);
+						//将数组倒序
+						msg.reverse();
+						if (msg.length > 0) {
+							let oldtime = msg[0].time;
+							let imgarr = [];
+							msg[0].imgurl = this.serverUrl + msg[0].imgurl;
+							for (var i = 1; i < msg.length; i++) {
+								msg[i].imgurl = this.serverUrl + msg[i].imgurl;
+								//时间间隔
+								if (i < msg.length - 1) {
+									let t = myfun.spacTime(oldtime, msg[i].time);
+									if (t) {
+										oldtime = t;
+									}
+									msg[i].time = t;
+								}
+								//匹配最大时间
+								if (this.nowpage == 0) {
+									if (msg[i].time > this.oldTime) {
+										this.oldTime = msg[i].time;
+									}
+								}
+								//补充图片地址
+								if (msg[i].types == 1) {
+									msg[i].message = this.serverUrl + msg[i].message;
+									imgarr.push(msg[i].message);
+								}
+							}
+							this.msgs = msg.concat(this.msgs);
+							this.imgMsg = imgarr.concat(this.imgMsg);
+						}
+						//判断nowpage
+						if (msg.length == 10) {
+							this.nowpage++;
+						} else {
+							//数据获取完毕
+							this.nowpage = -1;
+						}
+						//页数加1
+						this.$nextTick(function() {
+							//取消动画
+							this.swanititon = false;
+							this.scrollToView = 'msg' + this.msgs[msg.length - 1].id;
+						});
+						clearInterval(this.loading);
+						//关闭loading
+						this.isloading = true;
+						//开启加载
+						this.beginloading = true;
+					} else if (status == 500) {
+						uni.showToast({
+							title: '服务器出错啦！',
+							icon: 'none',
+							duration: 2000
+						});
+					} else if (status == 300) {
+						//token过期跳回登录页面
+						uni.navigateTo({
+							url: '../login/login?name=' + this.myname
+						});
+					}
+				}
+			});
+		},
+		//获取聊天数据
+		getMsg1: function(page) {
 			let msg = datas.message();
 			let maxpages = msg.length;
 			if (msg.length > (page + 1) * 10) {
@@ -137,8 +256,8 @@ export default {
 			this.$nextTick(function() {
 				//取消动画
 				this.swanititon = false;
-				
-				this.scrollToView = 'msg' + this.msgs[maxpages - page*10 - 1].tip;
+
+				this.scrollToView = 'msg' + this.msgs[maxpages - page * 10 - 1].tip;
 			});
 			clearInterval(this.loading);
 			//关闭loading
@@ -171,6 +290,11 @@ export default {
 		},
 		//接收输入内容
 		inputs: function(e) {
+			this.receiveMsg(e, this.uid, this.uimgurl, 0);
+		},
+		//接收消息
+		receiveMsg: function(e, id, img, tip) {
+			//tip==0表示自己发的 tip=1
 			this.swanititon = true;
 			let len = this.msgs.length;
 			//时间间隔
@@ -181,18 +305,111 @@ export default {
 			}
 			nowTime = t;
 			let data = {
-				id: 'b', //用户id
-				imgurl: '../../static/images/img/one.png',
+				fromId: id, //发送者id
+				imgurl: img,
 				message: e.message,
 				types: e.types, //内容类型（0文字，1图片链接，2音频连接...)
 				time: nowTime, //发送时间
-				tip: len
+				id: len
 			};
 			this.msgs.push(data);
 			this.goBottom();
+
+			//socket提交
+			//文字
+			if (e.types == 0 || e.types == 3) {
+				this.sendSocket(e);
+			}
+			//图片
 			if (e.types == 1) {
 				this.imgMsg.push(e.message);
+				//提交图片
+				//当前日期文件夹添加
+				let url = myfun.fileName(new Date());
+				const uploadTask = uni.uploadFile({
+					url: this.serverUrl + '/files/upload', //仅为示例，非真实的接口地址
+					filePath: e.message,
+					name: 'file',
+					formData: {
+						url: url,
+						name: new Date().getTime() + this.uid + Math.ceil(Math.random() * 10)
+					},
+					success: uploadFileRes => {
+						console.log(uploadFileRes);
+						let data = {
+							message: uploadFileRes,
+							types: e.types
+						};
+						this.sendSocket(data);
+						// let path = this.serverUrl + uploadFileRes.data;
+						// this.img.push(path);
+						// console.log(this.img.length);
+					}
+				});
+
+				uploadTask.onProgressUpdate(res => {
+					// console.log('上传进度' + res.progress);
+					// console.log('已经上传的数据长度' + res.totalBytesSent);
+					// console.log('预期需要上传的数据总长度' + res.totalBytesExpectedToSend);
+					// // 测试条件，取消上传任务。
+					// if (res.progress > 50) {
+					// 	uploadTask.abort();
+					// }
+				});
 			}
+			//音频
+			if (e.types == 2) {
+				//提交音频
+				//当前日期文件夹添加
+				let url = myfun.fileName(new Date());
+				const uploadTask = uni.uploadFile({
+					url: this.serverUrl + '/files/upload', //仅为示例，非真实的接口地址
+					filePath: e.message.voice,
+					name: 'file',
+					formData: {
+						url: url,
+						name: new Date().getTime() + this.uid + Math.ceil(Math.random() * 10)
+					},
+					success: uploadFileRes => {
+						console.log(uploadFileRes);
+						let data = {
+							message: uploadFileRes,
+							types: e.types
+						};
+						this.sendSocket(data);
+						// let path = this.serverUrl + uploadFileRes.data;
+						// this.img.push(path);
+						// console.log(this.img.length);
+					}
+				});
+
+				// uploadTask.onProgressUpdate(res => {
+				// console.log('上传进度' + res.progress);
+				// console.log('已经上传的数据长度' + res.totalBytesSent);
+				// console.log('预期需要上传的数据总长度' + res.totalBytesExpectedToSend);
+
+				// // 测试条件，取消上传任务。
+				// if (res.progress > 50) {
+				// 	uploadTask.abort();
+				// }
+				// });
+			}
+		},
+		//聊天数据发送给后端
+		sendSocket: function(e) {
+			if (this.type == 0) {
+				//好友聊天
+				this.socket.emit('msg', e, this.uid, this.fid);
+			} else {
+				//群聊
+				this.socket.emit('groupMsg', e, this.uid, this.fid);
+			}
+		},
+		//socket聊天数据接收
+		receiveSocketMsg: function() {
+			this.socket.on('msg', (msg,fromid) => {
+				console.log(msg + ':' + fromid);
+			});
 		},
 		//输入框高度
 		heights: function(e) {
