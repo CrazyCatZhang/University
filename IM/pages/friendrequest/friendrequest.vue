@@ -6,19 +6,19 @@
 			<view class="top-bar-right"><view class="pice"></view></view>
 		</view>
 		<view class="main">
-			<view class="requester" v-for="(item,index) in requesters" :key="index">
+			<view class="requester" v-for="(item, index) in requesters" :key="index">
 				<view class="request-top">
-					<view class="reject btn">拒绝</view>
+					<view class="reject btn" @tap="refuse(item.id)">拒绝</view>
 					<view class="header-img"><image :src="item.imgurl" mode=""></image></view>
-					<view class="agree btn">同意</view>
+					<view class="agree btn" @tap="agree(item.id)">同意</view>
 				</view>
 				<view class="request-center">
-					<view class="title">{{item.name}}</view>
-					<view class="time">{{changeTime(item.time)}}</view>
+					<view class="title">{{ item.name }}</view>
+					<view class="time">{{ changeTime(item.lastTime) }}</view>
 				</view>
 				<view class="notic">
 					<text>留言：</text>
-					{{item.news}}
+					{{ item.msg }}
 				</view>
 			</view>
 		</view>
@@ -26,34 +26,188 @@
 </template>
 
 <script>
-import datas from '../../commons/js/datas.js';
 import method from '../../commons/js/method.js';
 
 export default {
 	data() {
 		return {
-			requesters: []
+			requesters: [],
+			uid: '',
+			myname: '',
+			token: ''
 		};
 	},
 	onLoad() {
-		this.getRequesters();
+		this.getStorage();
+		this.friendRquest();
 	},
 	methods: {
 		changeTime: function(date) {
 			return method.dateTime(date);
 		},
-		getRequesters: function() {
-			this.requesters = datas.friends();
-			for (var i = 0; i < this.requesters.length; i++) {
-				this.requesters[i].imgurl = '../../static/images/img/' + this.requesters[i].imgurl;
-			}
-			console.log(this.requesters);
-		},
 		backOne: function() {
 			uni.navigateBack({
 				delta: 1
 			});
-		}
+		},
+		//获取登录成功的本地缓存数据
+		getStorage: function() {
+			try {
+				const value = uni.getStorageSync('user');
+				if (value) {
+					this.uid = value.id;
+					this.token = value.token;
+					this.myname = value.name;
+				} else {
+					//如果没有数据缓存就跳转到登录界面去
+					uni.navigateTo({
+						url: '../login/login'
+					});
+				}
+			} catch (e) {
+				// error
+			}
+		},
+		//好友申请
+		friendRquest: function() {
+			uni.request({
+				url: this.serverUrl + '/index/getfriend',
+				data: {
+					uid: this.uid,
+					state: 1,
+					token: this.token
+				},
+				method: 'POST',
+				success: data => {
+					// console.log(data);
+					let status = data.data.status;
+					if (status == 200) {
+						let res = data.data.result;
+						for (var i = 0; i < res.length; i++) {
+							res[i].imgurl = this.serverUrl + res[i].imgurl;
+							this.getLeave(res, i);
+						}
+						this.requesters = res;
+						console.log(res);
+					} else if (status == 500) {
+						uni.showToast({
+							title: '服务器出错啦！',
+							icon: 'none',
+							duration: 2000
+						});
+					} else if (status == 300) {
+						//token过期跳回登录页面
+						uni.navigateTo({
+							url: '../login/login?name=' + this.myname
+						});
+					}
+				}
+			});
+		},
+		//获取留言
+		getLeave: function(arr, i) {
+			uni.request({
+				url: this.serverUrl + '/index/getlastmsg',
+				data: {
+					uid: this.uid,
+					fid: arr[i].id,
+					token: this.token
+				},
+				method: 'POST',
+				success: data => {
+					// console.log(data);
+					let status = data.data.status;
+					if (status == 200) {
+						let res = data.data.result;
+						let e = arr[i];
+						e.msg = res.message;
+						arr.splice(i, 1, e);
+						console.log(res);
+					} else if (status == 500) {
+						uni.showToast({
+							title: '服务器出错啦！',
+							icon: 'none',
+							duration: 2000
+						});
+					} else if (status == 300) {
+						//token过期跳回登录页面
+						uni.navigateTo({
+							url: '../login/login?name=' + this.myname
+						});
+					}
+				}
+			});
+		},
+		//拒绝好友申请
+		refuse: function(fid) {
+			uni.request({
+				url: this.serverUrl + '/friend/deletefriend',
+				data: {
+					uid: this.uid,
+					fid: fid,
+					token: this.token
+				},
+				method: 'POST',
+				success: data => {
+					// console.log(data);
+					let status = data.data.status;
+					console.log(status);
+					if (status == 200) {
+						for (var i = 0; i < this.requesters.length; i++) {
+							if(this.requesters[i].id == fid) {
+								this.requesters.splice(i,1);
+							}
+						}
+					} else if (status == 500) {
+						uni.showToast({
+							title: '服务器出错啦！',
+							icon: 'none',
+							duration: 2000
+						});
+					} else if (status == 300) {
+						//token过期跳回登录页面
+						uni.navigateTo({
+							url: '../login/login?name=' + this.myname
+						});
+					}
+				}
+			});
+		},
+		//同意好友申请
+		agree: function(fid) {
+			uni.request({
+				url: this.serverUrl + '/friend/updatefriendstate',
+				data: {
+					uid: this.uid,
+					fid: fid,
+					token: this.token
+				},
+				method: 'POST',
+				success: data => {
+					// console.log(data);
+					let status = data.data.status;
+					console.log(status);
+					if (status == 200) {
+						for (var i = 0; i < this.requesters.length; i++) {
+							if(this.requesters[i].id == fid) {
+								this.requesters.splice(i,1);
+							}
+						}
+					} else if (status == 500) {
+						uni.showToast({
+							title: '服务器出错啦！',
+							icon: 'none',
+							duration: 2000
+						});
+					} else if (status == 300) {
+						//token过期跳回登录页面
+						uni.navigateTo({
+							url: '../login/login?name=' + this.myname
+						});
+					}
+				}
+			});
+		},
 	}
 };
 </script>
