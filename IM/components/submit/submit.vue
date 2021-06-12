@@ -239,7 +239,9 @@ export default {
 						latitude: res.latitude,
 						longitude: res.longitude
 					};
-					this.send(data, 3);
+					//将json数据转换成字符串
+					let stringData = JSON.stringify(data);
+					this.send(stringData, 3);
 					// console.log('位置名称：' + res.name);
 					// console.log('详细地址：' + res.address);
 					// console.log('纬度：' + res.latitude);
