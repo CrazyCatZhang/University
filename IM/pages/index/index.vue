@@ -5,7 +5,7 @@
 			<view class="top-bar-center"><image class="logo" src="../../static/images/index/logo.png" mode=""></image></view>
 			<view class="top-bar-right">
 				<view class="search" @tap="toSearch"><image src="../../static/images/index/search.png" mode=""></image></view>
-				<view class="add"><image src="../../static/images/index/add.png" mode=""></image></view>
+				<view class="add" @tap="toBuildGroup"><image src="../../static/images/index/add.png" mode=""></image></view>
 			</view>
 		</view>
 		<view class="main">
@@ -74,7 +74,8 @@ export default {
 		this.friendRquest();
 		this.getFriends();
 		this.join(this.uid);
-		this.sockettest();
+		this.receiveSocketMsg();
+		// this.sockettest();
 	},
 	onPullDownRefresh() {
 		this.friends = [];
@@ -257,7 +258,7 @@ export default {
 						} else if (res.types == 1) {
 							res.message = '[图片]';
 						} else if (res.types == 2) {
-							res.message = '[音频]';
+							res.message = '[语音]';
 						} else if (res.types == 3) {
 							res.message = '[位置]';
 						}
@@ -317,15 +318,42 @@ export default {
 		//socket模块
 		//进行socket注册
 		join: function(uid) {
-			this.socket.emit('login',uid);
+			this.socket.emit('login', uid);
 		},
-		//服务器消息接收测试
-		sockettest: function() {
-			this.socket.on('login',id => {
-				console.log('后端发送的消息：' + id);
-			})
+		// //服务器消息接收测试
+		// sockettest: function() {
+		// 	this.socket.on('login', id => {
+		// 		console.log('后端发送的消息：' + id);
+		// 	});
+		// },
+		//socket聊天数据接收
+		receiveSocketMsg: function() {
+			this.socket.on('msg', (msg, fromid) => {
+				let nmsg = '';
+				if (msg.types == 0) {
+					nmsg = msg.message;
+				} else if (msg.types == 1) {
+					nmsg = '[图片]';
+				} else if (msg.types == 2) {
+					nmsg = '[语音]';
+				} else if (msg.types == 3) {
+					nmsg = '[位置]';
+				}
+				
+				for (var i = 0; i < this.friends.length; i++) {
+					if(this.friends[i].id == fromid) {
+						let e = this.friends[i];
+						e.lastTime = new Date();
+						e.msg = nmsg;
+						e.tip++;
+						//删除原来的数据项
+						this.friends.splice(i,1);
+						//新消息插入到顶部
+						this.friends.unshift(e);
+					}
+				}
+			});
 		},
-		
 		//跳转到搜索界面
 		toSearch: function() {
 			uni.navigateTo({
@@ -342,6 +370,11 @@ export default {
 		toChatRoom: function(data) {
 			uni.navigateTo({
 				url: '../chatroom/chatroom?id=' + data.id + '&name=' + data.name + '&img=' + data.imgurl + '&type=' + data.type
+			});
+		},
+		toBuildGroup: function() {
+			uni.navigateTo({
+				url: '../buildgroup/buildgroup'
 			});
 		}
 	}
