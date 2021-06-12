@@ -188,6 +188,11 @@ export default {
 									msg[i].message = this.serverUrl + msg[i].message;
 									imgarr.push(msg[i].message);
 								}
+								
+								//json字符串还原
+								if(msg[i].types == 3) {
+									msg[i].message = JSON.parse(msg[i].message);
+								}
 							}
 							this.msgs = msg.concat(this.msgs);
 							this.imgMsg = imgarr.concat(this.imgMsg);
@@ -295,26 +300,6 @@ export default {
 		//接收消息
 		receiveMsg: function(e, id, img, tip) {
 			//tip==0表示自己发的 tip=1
-			this.swanititon = true;
-			let len = this.msgs.length;
-			//时间间隔
-			let nowTime = new Date();
-			let t = myfun.spacTime(this.oldTime, nowTime);
-			if (t) {
-				this.oldTime = t;
-			}
-			nowTime = t;
-			let data = {
-				fromId: id, //发送者id
-				imgurl: img,
-				message: e.message,
-				types: e.types, //内容类型（0文字，1图片链接，2音频连接...)
-				time: nowTime, //发送时间
-				id: len
-			};
-			this.msgs.push(data);
-			this.goBottom();
-
 			//socket提交
 			//文字
 			if (e.types == 0 || e.types == 3) {
@@ -337,7 +322,7 @@ export default {
 					success: uploadFileRes => {
 						console.log(uploadFileRes);
 						let data = {
-							message: uploadFileRes,
+							message: uploadFileRes.data,
 							types: e.types
 						};
 						this.sendSocket(data);
@@ -346,7 +331,7 @@ export default {
 						// console.log(this.img.length);
 					}
 				});
-
+			
 				uploadTask.onProgressUpdate(res => {
 					// console.log('上传进度' + res.progress);
 					// console.log('已经上传的数据长度' + res.totalBytesSent);
@@ -373,7 +358,7 @@ export default {
 					success: uploadFileRes => {
 						console.log(uploadFileRes);
 						let data = {
-							message: uploadFileRes,
+							message: uploadFileRes.data,
 							types: e.types
 						};
 						this.sendSocket(data);
@@ -382,18 +367,43 @@ export default {
 						// console.log(this.img.length);
 					}
 				});
-
+			
 				// uploadTask.onProgressUpdate(res => {
 				// console.log('上传进度' + res.progress);
 				// console.log('已经上传的数据长度' + res.totalBytesSent);
 				// console.log('预期需要上传的数据总长度' + res.totalBytesExpectedToSend);
-
+			
 				// // 测试条件，取消上传任务。
 				// if (res.progress > 50) {
 				// 	uploadTask.abort();
 				// }
 				// });
 			}
+			
+			this.swanititon = true;
+			let len = this.msgs.length;
+			//时间间隔
+			let nowTime = new Date();
+			let t = myfun.spacTime(this.oldTime, nowTime);
+			if (t) {
+				this.oldTime = t;
+			}
+			nowTime = t;
+			//json字符串还原
+			if(e.types == 3) {
+				e.message = JSON.parse(e.message);
+			}
+			let data = {
+				fromId: id, //发送者id
+				imgurl: img,
+				message: e.message,
+				types: e.types, //内容类型（0文字，1图片链接，2音频连接...)
+				time: nowTime, //发送时间
+				id: len
+			};
+			this.msgs.push(data);
+			this.goBottom();
+
 		},
 		//聊天数据发送给后端
 		sendSocket: function(e) {
@@ -407,8 +417,34 @@ export default {
 		},
 		//socket聊天数据接收
 		receiveSocketMsg: function() {
-			this.socket.on('msg', (msg,fromid) => {
-				console.log(msg + ':' + fromid);
+			this.socket.on('msg', (msg, fromid,tip) => {
+				if (fromid == this.fid && tip == 0) {
+					this.swanititon = true;
+					let len = this.msgs.length;
+					let nowTime = new Date();
+					let t = myfun.spacTime(this.oldTime, nowTime);
+					if (t) {
+						this.oldTime = t;
+					}
+					//判断是否要添加ip
+					if (msg.types == 1 || msg.types == 2) {
+						msg.message = this.serverUrl + msg.message;
+					}
+					nowTime = t;
+					let data = {
+						fromId: fromid, //发送者id
+						imgurl: this.fimgurl,
+						message: msg.message,
+						types: msg.types, //内容类型（0文字，1图片链接，2音频连接...)
+						time: nowTime, //发送时间
+						id: len
+					};
+					this.msgs.push(data);
+					if (msg.types == 1) {
+						this.imgMsg.push(msg.message);
+					}
+					this.goBottom();
+				}
 			});
 		},
 		//输入框高度
@@ -422,7 +458,7 @@ export default {
 			this.scrollToView = '';
 			this.$nextTick(function() {
 				let len = this.msgs.length - 1;
-				this.scrollToView = 'msg' + this.msgs[len].tip;
+				this.scrollToView = 'msg' + this.msgs[len].id;
 			});
 		},
 		//播放音频
