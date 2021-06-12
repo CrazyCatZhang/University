@@ -59,6 +59,14 @@
             }
             
         }
+        ,{
+            "path" : "pages/buildgroup/buildgroup",
+            "style" :                                                                                    
+            {
+                "navigationStyle": "custom"
+            }
+            
+        }
     ],
 	"globalStyle": {
 		"navigationBarTextStyle": "black",
