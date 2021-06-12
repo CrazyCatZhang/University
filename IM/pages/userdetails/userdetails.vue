@@ -126,6 +126,7 @@ export default {
 			index: 0,
 			date: currentDate,
 			tempFilePath: '',
+			headimg:'',
 			modifyTitle: '', //修改标题
 			data: '', //修改签名内容
 			pwd: undefined, //原密码
@@ -336,6 +337,7 @@ export default {
 		confirm(e) {
 			this.tempFilePath = '';
 			this.cropFilePath = e.detail.tempFilePath;
+			this.headimg = e.detail.tempFilePath;
 
 			uni.uploadFile({
 				url: this.serverUrl + '/files/upload', //'后端地址上传图片接口地址',
