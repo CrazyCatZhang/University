@@ -15,6 +15,8 @@ var friend = require('../server/friend');
 var index = require('../server/index');
 //聊天页面服务
 var chat = require('../server/chat');
+//群页面服务
+var group = require('../server/group');
 
 module.exports = function (app) {
     app.get("/test", (req, res) => {
@@ -81,7 +83,7 @@ module.exports = function (app) {
     //好友备注修改
     app.post("/user/markname", (req, res) => {
         user.friendMarkName(req, res);
-    }); 
+    });
     //获取好友昵称
     app.post("/user/getmarkname", (req, res) => {
         user.getMarkName(req, res);
@@ -133,8 +135,14 @@ module.exports = function (app) {
     });
 
     //聊天
-     //聊天消息
-     app.post("/chat/chatmsg", (req, res) => {
+    //聊天消息
+    app.post("/chat/chatmsg", (req, res) => {
         chat.msg(req, res);
+    });
+
+    //群操作
+    //新建群
+    app.post("/group/creategroup", (req, res) => {
+        group.createGroup(req, res);
     });
 };
