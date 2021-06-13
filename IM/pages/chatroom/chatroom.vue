@@ -7,7 +7,7 @@
 			</view>
 			<view class="top-bar-right">
 				<view class="pice"></view>
-				<view class="group-img" v-if="type == 1"><image :src="fimgurl" mode=""></image></view>
+				<view class="group-img" v-if="type == 0" @tap="goGroupHome"><image :src="fimgurl" mode=""></image></view>
 			</view>
 		</view>
 		<scroll-view class="chat" scroll-y="true" :scroll-with-animation="swanititon" :scroll-into-view="scrollToView" @scrolltoupper="nextPage">
@@ -137,6 +137,12 @@ export default {
 				delta: 1
 			});
 		},
+		//进入群详情页
+		goGroupHome: function() {
+			uni.navigateTo({
+				url: '../grouphome/grouphome?gid=' + this.fid + '&gimg=' + this.fimgurl
+			});
+		},
 		//处理时间
 		changeTime: function(date) {
 			return myfun.dateTime1(date);
@@ -188,7 +194,7 @@ export default {
 									msg[i].message = this.serverUrl + msg[i].message;
 									imgarr.push(msg[i].message);
 								}
-								
+
 								//json字符串还原
 								if(msg[i].types == 3) {
 									msg[i].message = JSON.parse(msg[i].message);
@@ -331,7 +337,7 @@ export default {
 						// console.log(this.img.length);
 					}
 				});
-			
+
 				uploadTask.onProgressUpdate(res => {
 					// console.log('上传进度' + res.progress);
 					// console.log('已经上传的数据长度' + res.totalBytesSent);
@@ -367,19 +373,19 @@ export default {
 						// console.log(this.img.length);
 					}
 				});
-			
+
 				// uploadTask.onProgressUpdate(res => {
 				// console.log('上传进度' + res.progress);
 				// console.log('已经上传的数据长度' + res.totalBytesSent);
 				// console.log('预期需要上传的数据总长度' + res.totalBytesExpectedToSend);
-			
+
 				// // 测试条件，取消上传任务。
 				// if (res.progress > 50) {
 				// 	uploadTask.abort();
 				// }
 				// });
 			}
-			
+
 			this.swanititon = true;
 			let len = this.msgs.length;
 			//时间间隔
