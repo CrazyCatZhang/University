@@ -93,7 +93,7 @@
 		<view class="modify" :style="{ bottom: -widHeight + 'px' }" :animation="animationData">
 			<view class="modify-header">
 				<view class="close" @tap="modify">取消</view>
-				<view class="title">{{modifyTitle}}</view>
+				<view class="title">{{ modifyTitle }}</view>
 				<view class="define" @tap="modifySubmit">确定</view>
 			</view>
 			<view class="modify-main">
@@ -120,21 +120,21 @@ export default {
 			token: '',
 			user: '',
 			markname: '',
-			olddata: '', //原始数据
 			cropFilePath: '../../static/images/img/three.png',
 			array: ['男', '女', '未知'],
 			index: 0,
 			date: currentDate,
 			tempFilePath: '',
-			headimg:'',
+			headimg: '',
 			modifyTitle: '', //修改标题
 			data: '', //修改签名内容
+			olddata: '', //原始数据
 			pwd: undefined, //原密码
 			type: '', //修改项
 			ispwd: false, //是否需要原密码
 			animationData: {}, //动画
 			isModify: false, //动画开关
-			widHeight: '' //页面高度
+			widHeight: '1000' //页面高度
 		};
 	},
 	computed: {
@@ -551,7 +551,7 @@ export default {
 			uni.showModal({
 				title: '提示',
 				content: '确定删除该好友吗？',
-				success: (res) => {
+				success: res => {
 					if (res.confirm) {
 						// console.log('用户点击确定');
 						uni.request({
