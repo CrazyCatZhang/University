@@ -511,67 +511,67 @@ exports.updateMsg = function (data, res) {
     });
 }
 
-//新建群
-exports.createGroup = function (data, res) {
-    let groupData = {
-        userID: data.uid,
-        name: data.name,
-        imgurl: data.imgurl,
-        time: new Date(),
-    };
-
-    var group = new Group(groupData);
-
-    group.save(function (err, result) {
-        if (err) {
-            res.send({ status: 500 });
-        } else {
-            Group.find({ 'userID': data.uid, 'name': data.name }, { '_id': 1 }, function (err, rest) {
-                if (err) {
-                    res.send({ status: 500 });
-                } else {
-                    //添加新成员到群
-                    res.map(function (gid) {
-                        //添加群主入群
-                        let udata = {
-                            groupID: gid._id,
-                            userID: data.uid,
-                            time: new Date(),
-                            lastTime: new Date(),
-                        };
-                        //加入
-                        this.insertGroupUser(udata);
-                        //添加好友入群
-                        data.user.map(function (uid) {
-                            let fdata = {
-                                groupID: gid._id,
-                                userID: uid,
-                                time: new Date(),
-                                lastTime: new Date(),
-                            };
-                            //加入
-                            this.insertGroupUser(fdata);
-                        });
-                    });
-                    //创建成功
-                    res.send({ status: 200 });
-                }
-            });
-        }
-    });
-}
-
 //添加群成员
-exports.insertGroupUser = function (data) {
+exports.insertGroupUser = function (data, res) {
     var groupUser = new GroupUser(data);
 
-    groupUser.save(function (err, res) {
+    groupUser.save(function (err, rest) {
         if (err) {
             res.send({ status: 500 });
         } else {
             console.log('添加群成员成功');
         }
-    })
+    });
+}
+
+function insertGroupUser(data, res) {
+    var groupUser = new GroupUser(data);
+
+    groupUser.save(function (err, rest) {
+        if (err) {
+            res.send({ status: 500 });
+        } else {
+            console.log('添加群成员成功');
+        }
+    });
+}
+
+//新建群
+exports.createGroup = function (data, res) {
+    return new Promise(function (resolve, reject) {
+        let groupData = {
+            userID: data.uid,
+            name: data.name,
+            imgurl: data.imgurl,
+            time: new Date(),
+        };
+
+        var group = new Group(groupData);
+
+        group.save(function (err, result) {
+            if (err) {
+                reject({ status: 500 });
+            } else {
+                resolve(result);
+            }
+        });
+    }).then(function onFulfilled(value) {
+        //添加好友入群
+        for (let i = 0; i < data.user.length; i++) {
+            let fdata = {
+                groupID: value._id,
+                userID: data.user[i],
+                time: new Date(),
+                lastTime: new Date(),
+            };
+            //加入
+            insertGroupUser(fdata, res);
+        }
+        //创建成功
+        res.send({ status: 200 });
+    }).catch(function onRejected(error) {
+        res.send(error);
+    });
 }
 
 //按需求获取群列表
