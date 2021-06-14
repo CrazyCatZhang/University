@@ -8,10 +8,10 @@
 		<view class="main">
 			<view class="top">
 				<!-- 群头像 -->
-				<view class="group-img" @tap="upload">
+				<view class="group-img">
 					<image-cropper :src="tempFilePath" @confirm="confirm" @cancel="cancel"></image-cropper>
-					<image src="../../static/images/group/change.png" class="pen"></image>
-					<image :src="cropFilePath" class="img"></image>
+					<image src="../../static/images/group/change.png" class="pen" @tap="upload"></image>
+					<image :src="cropFilePath" class="img" @tap="upload"></image>
 				</view>
 				<!-- 群昵称 -->
 				<view class="group-name">
@@ -21,7 +21,7 @@
 			</view>
 			<!-- 选择用户 -->
 			<view class="friends">
-				<view class="user" v-for="(item, index) in user" :key="index" @tap="selectFriend(index)">
+				<view class="user" v-for="(item, index) in friends" :key="index" @tap="selectFriend(index)">
 					<view class="selected" :class="{ isselected: item.selected }">
 						<image src="../../static/images/group/choose.png" mode="" v-if="item.selected" class="selected-img"></image>
 					</view>
@@ -31,7 +31,7 @@
 			</view>
 		</view>
 		<view class="bottom-bar">
-			<view class="bottom-btn btn1" :class="{ isselect: select && name.length > 0 }">创建({{ selectedNum }})</view>
+			<view class="bottom-btn btn1" :class="{ isselect: select && name.length > 0 }" @tap="submit">创建({{ selectedNum }})</view>
 		</view>
 	</view>
 </template>
@@ -41,57 +41,23 @@ import ImageCropper from '@/components/ling-imgcropper/ling-imgcropper.vue';
 export default {
 	data() {
 		return {
+			uid: '',
+			token: '',
+			gimgurl: '/group/group.png',
 			tempFilePath: '',
 			cropFilePath: '../../static/images/group/group.png',
+			headimg: '',
 			selectedNum: 0,
 			name: '',
-			user: [
-				{
-					selected: false,
-					imgurl: '../../static/images/img/one.png',
-					name: '多撒啊啊大干'
-				},
-				{
-					selected: true,
-					imgurl: '../../static/images/img/two.png',
-					name: '多撒啊啊大干'
-				},
-				{
-					selected: true,
-					imgurl: '../../static/images/img/three.png',
-					name: '我这个名字有点长我这个名字有点长我这个名字有点长我这个名字有点长我这个名字有点长'
-				},
-				{
-					selected: false,
-					imgurl: '../../static/images/img/four.png',
-					name: '多撒啊啊大干'
-				},
-				{
-					selected: false,
-					imgurl: '../../static/images/img/one.png',
-					name: '多撒啊啊大干'
-				},
-				{
-					selected: true,
-					imgurl: '../../static/images/img/two.png',
-					name: '多撒啊啊大干'
-				},
-				{
-					selected: true,
-					imgurl: '../../static/images/img/three.png',
-					name: '我这个名字有点长我这个名字有点长我这个名字有点长我这个名字有点长我这个名字有点长'
-				},
-				{
-					selected: false,
-					imgurl: '../../static/images/img/four.png',
-					name: '多撒啊啊大干'
-				}
-			]
+			friends: [], //好友数组
+			user: [] //已选择好友数组
 		};
 	},
 	components: { ImageCropper },
 	onLoad: function() {
 		this.selectedNumber();
+		this.getStorage();
+		this.getFriends();
 	},
 	computed: {
 		select: function() {
@@ -105,19 +71,36 @@ export default {
 	methods: {
 		//返回上一层
 		backOne: function() {
-			uni.navigateBack({
-				delta: 1
+			uni.navigateTo({
+				url: '../index/index'
 			});
+		},
+		//获取登录成功的本地缓存数据
+		getStorage: function() {
+			try {
+				const value = uni.getStorageSync('user');
+				if (value) {
+					this.uid = value.id;
+					this.token = value.token;
+				} else {
+					//如果没有数据缓存就跳转到登录界面去
+					uni.navigateTo({
+						url: '../login/login'
+					});
+				}
+			} catch (e) {
+				// error
+			}
 		},
 		//获取已选择个数
 		selectedNumber: function() {
-			for (var i = 0; i < this.user.length; i++) {
-				if (this.user[i].selected) {
+			for (var i = 0; i < this.friends.length; i++) {
+				if (this.friends[i].selected) {
 					this.selectedNum++;
 				}
 			}
 		},
-		//头像裁剪
+		//群头像裁剪
 		upload() {
 			uni.chooseImage({
 				count: 1, //默认9
@@ -132,11 +115,6 @@ export default {
 			this.tempFilePath = '';
 			this.cropFilePath = e.detail.tempFilePath;
 			this.headimg = e.detail.tempFilePath;
-			// console.log(e.detail.tempFilePath)
-		},
-		tconfirm(e) {
-			this.tempFilePath = '';
-			this.cropFilePath = e.detail.tempFilePath;
 
 			uni.uploadFile({
 				url: this.serverUrl + '/files/upload', //'后端地址上传图片接口地址',
@@ -144,22 +122,15 @@ export default {
 				name: 'file',
 				fileType: 'image',
 				formData: {
-					url: 'user',
-					name: this.uid,
+					url: 'group',
+					name: this.uid + new Date().getTime(),
 					token: this.token
 				}, //传递参数
 				success: uploadFileRes => {
 					var backstr = uploadFileRes.data;
 					console.log(backstr);
-					//本地存储用户信息修改
-					try {
-						uni.setStorageSync('user', { id: this.uid, name: this.myname, imgurl: backstr, token: this.token });
-					} catch (e) {
-						// error
-						console.log('数据存储出错');
-					}
-					//修改头像保存到数据库
-					this.update(backstr, 'imgurl', undefined);
+					//获取群头像名称
+					this.gimgurl = backstr;
 				},
 
 				fail(e) {
@@ -173,12 +144,100 @@ export default {
 		},
 		//动态选择好友
 		selectFriend: function(index) {
-			if (this.user[index].selected) {
-				this.user[index].selected = false;
+			if (this.friends[index].selected) {
+				this.friends[index].selected = false;
 				this.selectedNum--;
 			} else {
-				this.user[index].selected = true;
+				this.friends[index].selected = true;
 				this.selectedNum++;
+			}
+		},
+		//好友获取
+		getFriends: function() {
+			uni.request({
+				url: this.serverUrl + '/index/getfriend',
+				data: {
+					uid: this.uid,
+					state: 0,
+					token: this.token
+				},
+				method: 'POST',
+				success: data => {
+					this.refresh = true;
+					let status = data.data.status;
+					if (status == 200) {
+						let res = data.data.result;
+						this.noone = false;
+						if (res.length > 0) {
+							for (var i = 0; i < res.length; i++) {
+								res[i].selected = false;
+								res[i].imgurl = this.serverUrl + res[i].imgurl;
+								if (res[i].markname) {
+									res[i].name = res[i].markname;
+								}
+								this.friends.push(res[i]);
+							}
+							// console.log(this.friends);
+						} else {
+							// this.noone = true;
+						}
+					} else if (status == 500) {
+						uni.showToast({
+							title: '服务器出错啦！',
+							icon: 'none',
+							duration: 2000
+						});
+					} else if (status == 300) {
+						//token过期跳回登录页面
+						uni.navigateTo({
+							url: '../login/login?name=' + this.myname
+						});
+					}
+				}
+			});
+		},
+		//创建提交
+		submit: function() {
+			//符合提交条件
+			if (this.select && this.name.length > 0) {
+				this.user.push(this.uid);
+				for (var i = 0; i < this.friends.length; i++) {
+					if (this.friends[i].selected) {
+						this.user.push(this.friends[i].id);
+					}
+				}
+				uni.request({
+					url: this.serverUrl + '/group/creategroup',
+					data: {
+						uid: this.uid,
+						token: this.token,
+						name: this.name,
+						imgurl: this.gimgurl,
+						user: this.user
+					},
+					method: 'POST',
+					success: data => {
+						this.refresh = true;
+						let status = data.data.status;
+						if (status == 200) {
+							//创建成功跳回首页
+							uni.navigateTo({
+								url: '../index/index'
+							});
+						} else if (status == 500) {
+							uni.showToast({
+								title: '服务器出错啦！',
+								icon: 'none',
+								duration: 2000
+							});
+						} else if (status == 300) {
+							//token过期跳回登录页面
+							uni.navigateTo({
+								url: '../login/login?name=' + this.myname
+							});
+						}
+					}
+				});
 			}
 		}
 	}
