@@ -19,7 +19,7 @@ module.exports = function (io) {
             //修改好友最后通讯时间
             dbserver.upFriendLastTime({ uid: fromid, fid: toid });
             //存储一对一消息
-            dbserver.insertMsg(fromid,toid,msg.message,msg.types);
+            dbserver.insertMsg(fromid, toid, msg.message, msg.types);
             //发送给对方
             if (users[toid]) {
                 socket.to(users[toid]).emit('msg', msg, fromid, 0);
@@ -34,6 +34,18 @@ module.exports = function (io) {
                 delete users[socket.name];
                 console.log(socket.id + ' disconnected');
             }
+        });
+
+        //加入群
+        socket.on('group', function (data) {
+            // console.log('群' + data);
+            socket.join(data);
+        });
+
+        //接收群消息
+        socket.on('groupMsg', function (msg, fromid, gid,name,img) {
+            //群内广播消息
+            socket.to(gid).emit('groupmsg', msg, gid, name,img);
         });
     });
 }
