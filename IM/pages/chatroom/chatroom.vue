@@ -7,7 +7,7 @@
 			</view>
 			<view class="top-bar-right">
 				<view class="pice"></view>
-				<view class="group-img" v-if="type == 0" @tap="goGroupHome"><image :src="fimgurl" mode=""></image></view>
+				<view class="group-img" v-if="type == 1" @tap="goGroupHome"><image :src="fimgurl" mode=""></image></view>
 			</view>
 		</view>
 		<scroll-view class="chat" scroll-y="true" :scroll-with-animation="swanititon" :scroll-into-view="scrollToView" @scrolltoupper="nextPage">
@@ -108,6 +108,7 @@ export default {
 		this.getStorage();
 		this.getMsg();
 		this.receiveSocketMsg();
+		this.groupSocket();
 	},
 	components: {
 		submit
@@ -196,7 +197,7 @@ export default {
 								}
 
 								//json字符串还原
-								if(msg[i].types == 3) {
+								if (msg[i].types == 3) {
 									msg[i].message = JSON.parse(msg[i].message);
 								}
 							}
@@ -396,7 +397,7 @@ export default {
 			}
 			nowTime = t;
 			//json字符串还原
-			if(e.types == 3) {
+			if (e.types == 3) {
 				e.message = JSON.parse(e.message);
 			}
 			let data = {
@@ -409,7 +410,6 @@ export default {
 			};
 			this.msgs.push(data);
 			this.goBottom();
-
 		},
 		//聊天数据发送给后端
 		sendSocket: function(e) {
@@ -418,12 +418,12 @@ export default {
 				this.socket.emit('msg', e, this.uid, this.fid);
 			} else {
 				//群聊
-				this.socket.emit('groupMsg', e, this.uid, this.fid);
+				this.socket.emit('groupMsg', e, this.uid, this.fid, this.uname, this.uimgurl);
 			}
 		},
 		//socket聊天数据接收
 		receiveSocketMsg: function() {
-			this.socket.on('msg', (msg, fromid,tip) => {
+			this.socket.on('msg', (msg, fromid, tip) => {
 				if (fromid == this.fid && tip == 0) {
 					this.swanititon = true;
 					let len = this.msgs.length;
@@ -440,6 +440,38 @@ export default {
 					let data = {
 						fromId: fromid, //发送者id
 						imgurl: this.fimgurl,
+						message: msg.message,
+						types: msg.types, //内容类型（0文字，1图片链接，2音频连接...)
+						time: nowTime, //发送时间
+						id: len
+					};
+					this.msgs.push(data);
+					if (msg.types == 1) {
+						this.imgMsg.push(msg.message);
+					}
+					this.goBottom();
+				}
+			});
+		},
+		//socket群聊天数据接收
+		groupSocket: function() {
+			this.socket.on('groupmsg', (msg, fromid, name,img) => {
+				if (fromid == this.fid) {
+					this.swanititon = true;
+					let len = this.msgs.length;
+					let nowTime = new Date();
+					let t = myfun.spacTime(this.oldTime, nowTime);
+					if (t) {
+						this.oldTime = t;
+					}
+					//判断是否要添加ip
+					if (msg.types == 1 || msg.types == 2) {
+						msg.message = this.serverUrl + msg.message;
+					}
+					nowTime = t;
+					let data = {
+						fromId: fromid, //发送者id
+						imgurl: img,
 						message: msg.message,
 						types: msg.types, //内容类型（0文字，1图片链接，2音频连接...)
 						time: nowTime, //发送时间
