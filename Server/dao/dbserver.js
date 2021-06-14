@@ -429,32 +429,33 @@ exports.deleteFriend = function (data, res) {
     })
 }
 
+// 废弃部分.....................................
 //按需求获取用户列表
-exports.getUsers = function (data, res) {
-    let query = Friend.find({});
-    //查询条件
-    query.where({ 'userID': data.uid, 'state': data.state });
-    //查询friendID 关联的user对象
-    query.populate('friendID');
-    //排序方式 最后通讯时间倒序排列
-    query.sort({ 'lastTime': -1 });
-    //查询结果
-    query.exec().then(function (e) {
-        let result = e.map(function (ver) {
-            return {
-                id: ver.friendID._id,
-                name: ver.friendID.name,
-                markname: ver.markname,
-                imgurl: ver.friendID.imgurl,
-                lastTime: ver.lastTime,
-                type: 0
-            }
-        });
-        res.send({ status: 200, result });
-    }).catch(function (err) {
-        res.send({ status: 500 });
-    })
-}
+// exports.getUsersd = function (data, res) {
+//     let query = Friend.find({});
+//     //查询条件
+//     query.where({ 'userID': data.uid, 'state': data.state });
+//     //查询friendID 关联的user对象
+//     query.populate('friendID');
+//     //排序方式 最后通讯时间倒序排列
+//     query.sort({ 'lastTime': -1 });
+//     //查询结果
+//     query.exec().then(function (e) {
+//         let result = e.map(function (ver) {
+//             return {
+//                 id: ver.friendID._id,
+//                 name: ver.friendID.name,
+//                 markname: ver.markname,
+//                 imgurl: ver.friendID.imgurl,
+//                 lastTime: ver.lastTime,
+//                 type: 0
+//             }
+//         });
+//         res.send({ status: 200, result });
+//     }).catch(function (err) {
+//         res.send({ status: 500 });
+//     })
+// }
 
 //按需求获取一条一对一消息
 exports.getLastMsg = function (data, res) {
@@ -491,6 +492,137 @@ exports.unReadMsg = function (data, res) {
             res.send({ status: 200, result });
         }
     });
+}
+// 废弃部分.....................................
+
+//按需求获取用户列表 解决异步问题
+exports.getUsers1 = function (data, res) {
+    return new Promise(function (resolve, reject) {
+        let query = Friend.find({});
+        //查询条件
+        query.where({ 'userID': data.uid, 'state': data.state });
+        //查询friendID 关联的user对象
+        query.populate('friendID');
+        //排序方式 最后通讯时间倒序排列
+        query.sort({ 'lastTime': -1 });
+        //查询结果
+        query.exec().then(function (e) {
+            let result = e.map(function (ver) {
+                return {
+                    id: ver.friendID._id,
+                    name: ver.friendID.name,
+                    markname: ver.markname,
+                    imgurl: ver.friendID.imgurl,
+                    lastTime: ver.lastTime,
+                    type: 0
+                }
+            });
+            res.send({ status: 200, result });
+        }).catch(function (err) {
+            res.send({ status: 500 });
+        })
+    }).then(function onFulfilled(value) {
+        res.send(value);
+    });
+}
+
+//按需求获取用户列表，解决异步问题
+function getUser(data) {
+    return new Promise(function (resolve, reject) {
+        let query = Friend.find({});
+        //查询条件
+        query.where({ 'userID': data.uid, 'state': data.state });
+        //查询friendID 关联的user对象
+        query.populate('friendID');
+        //排序方式 最后通讯时间倒序排列
+        query.sort({ 'lastTime': -1 });
+        //查询结果
+        query.exec().then(function (e) {
+            let result = e.map(function (ver) {
+                return {
+                    id: ver.friendID._id,
+                    name: ver.friendID.name,
+                    markname: ver.markname,
+                    imgurl: ver.friendID.imgurl,
+                    lastTime: ver.lastTime,
+                    type: 0
+                }
+            });
+            resolve(result);
+        }).catch(function (err) {
+            reject({ status: 500 });
+        })
+    });
+}
+
+//按需求获取最后一条消息
+function getLastMsg(uid, fid) {
+    return new Promise(function (resolve, reject) {
+        let query = Message.findOne({});
+        //查询条件
+        query.where({ $or: [{ 'userID': uid, 'friendID': fid }, { 'userID': fid, 'friendID': uid }] });
+        //排序方式 最后通讯时间倒序排列
+        query.sort({ 'time': -1 });
+        //查询结果
+        query.exec().then(function (ver) {
+            let result = {
+                message: ver.message,
+                time: ver.time,
+                types: ver.types,
+            };
+            resolve(result);
+        }).catch(function (err) {
+            reject({ status: 500 });
+        })
+    });
+}
+
+//汇总一对一消息未读数
+function unReadMsg(uid, fid) {
+    return new Promise(function (resolve, reject) {
+        //汇总条件
+        let wherestr = {
+            'userID': fid,
+            'friendID': uid,
+            'state': 1
+        };
+        Message.countDocuments(wherestr, (err, result) => {
+            if (err) {
+                reject({ status: 500 });
+            } else {
+                resolve(result);
+            }
+        });
+    });
+}
+
+//async/await 联合查找好友及最后一条信息及未读数据
+async function doIt(data, res) {
+    let result, bb, cc, err;
+    [err, result] = await getUser(data).then(data => [null, data]).catch(err => [err, null]);
+    for (let i = 0; i < result.length; i++) {
+        [err, bb] = await getLastMsg(data.uid, result[i].id).then(data => [null, data]).catch(err => [err, null]);
+        if (bb.types == 0) {
+            //文字
+        } else if (bb.types == 1) {
+            bb.message = '[图片]';
+        } else if (bb.types == 2) {
+            bb.message = '[语音]';
+        } else if (bb.types == 3) {
+            bb.message = '[位置]';
+        }
+        result[i].msg = bb.message;
+        [err, cc] = await unReadMsg(data.uid, result[i].id).then(data => [null, data]).catch(err => [err, null]);
+        result[i].tip = cc;
+    }
+    if (err) {
+        res.send(err);
+    } else {
+        res.send({ status: 200, result });
+    }
+}
+exports.getUsers = function(data, res) {
+    doIt(data, res);
 }
 
 //一对一消息状态修改
@@ -558,6 +690,7 @@ exports.createGroup = function (data, res) {
     }).then(function onFulfilled(value) {
         //添加好友入群
         for (let i = 0; i < data.user.length; i++) {
+            console.log(data.user[i]);
             let fdata = {
                 groupID: value._id,
                 userID: data.user[i],
