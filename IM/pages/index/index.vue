@@ -38,6 +38,7 @@
 					<view class="friends-list-l">
 						<text class="tip" v-if="item.tip > 0">{{ item.tip }}</text>
 						<image :src="item.imgurl" mode=""></image>
+						<view class="groupm" v-if="item.type == 1"></view>
 					</view>
 					<view class="friends-list-r">
 						<view class="top">
@@ -59,6 +60,7 @@ export default {
 	data() {
 		return {
 			friends: [],
+			groups: [],
 			uid: '', //用户id
 			imgurl: '', //用户头像
 			token: '', //token
@@ -73,9 +75,10 @@ export default {
 		this.getStorage();
 		this.friendRquest();
 		this.getFriends();
+		this.getGroup();
 		this.join(this.uid);
 		this.receiveSocketMsg();
-		// this.sockettest();
+		this.groupSocket();
 	},
 	onPullDownRefresh() {
 		this.friends = [];
@@ -176,12 +179,7 @@ export default {
 								}
 								this.friends.push(res[i]);
 							}
-							this.friends = method.paixu(this.friends, 'lastTime', 0);
-							//获取好友内消息
-							for (var i = 0; i < this.friends.length; i++) {
-								this.getLastMsg(this.friends, i);
-								this.getUnread(this.friends, i);
-							}
+							this.isOk(this.groups);
 						} else {
 							this.noone = true;
 						}
@@ -215,14 +213,14 @@ export default {
 					if (status == 200) {
 						let res = data.data.result;
 						if (res.length > 0) {
-							this.requestTime = res[0].lastTime;
 							for (var i = 0; i < res.length; i++) {
-								if (this.requestTime < res[i].lastTime) {
-									this.requestTime = res[i].lastTime;
-								}
+								res[i].imgurl = this.serverUrl + res[i].imgurl;
+								this.groups.push(res[i]);
+								this.socket.emit('group', res[i].id);
 							}
 						}
-						console.log(res);
+						this.isOk(this.friends);
+						// console.log(this.groups);
 					} else if (status == 500) {
 						uni.showToast({
 							title: '服务器出错啦！',
@@ -238,83 +236,95 @@ export default {
 				}
 			});
 		},
-		//获取最后消息
-		getLastMsg: function(arr, i) {
-			uni.request({
-				url: this.serverUrl + '/index/getlastmsg',
-				data: {
-					uid: this.uid,
-					fid: arr[i].id,
-					token: this.token
-				},
-				method: 'POST',
-				success: data => {
-					// console.log(data);
-					let status = data.data.status;
-					if (status == 200) {
-						let res = data.data.result;
-						if (res.types == 0) {
-							//文字
-						} else if (res.types == 1) {
-							res.message = '[图片]';
-						} else if (res.types == 2) {
-							res.message = '[语音]';
-						} else if (res.types == 3) {
-							res.message = '[位置]';
-						}
-						let e = arr[i];
-						e.msg = res.message;
-						arr.splice(i, 1, e);
-						console.log(res);
-					} else if (status == 500) {
-						uni.showToast({
-							title: '服务器出错啦！',
-							icon: 'none',
-							duration: 2000
-						});
-					} else if (status == 300) {
-						//token过期跳回登录页面
-						uni.navigateTo({
-							url: '../login/login?name=' + this.myname
-						});
-					}
-				}
-			});
+		//群与好友消息时间排序
+		isOk: function(e) {
+			if (e.length > 0) {
+				//数组拼接
+				this.friends = this.friends.concat(this.groups);
+				//数组排序
+				this.friends = method.paixu(this.friends, 'lastTime', 0);
+			}
 		},
-		//未读消息数
-		getUnread: function(arr, i) {
-			uni.request({
-				url: this.serverUrl + '/index/unreadmsg',
-				data: {
-					uid: this.uid,
-					fid: arr[i].id,
-					token: this.token
-				},
-				method: 'POST',
-				success: data => {
-					// console.log(data);
-					let status = data.data.status;
-					if (status == 200) {
-						let res = data.data.result;
-						let e = arr[i];
-						e.tip = res;
-						arr.splice(i, 1, e);
-						console.log(res);
-					} else if (status == 500) {
-						uni.showToast({
-							title: '服务器出错啦！',
-							icon: 'none',
-							duration: 2000
-						});
-					} else if (status == 300) {
-						//token过期跳回登录页面
-						uni.navigateTo({
-							url: '../login/login?name=' + this.myname
-						});
-					}
-				}
-			});
-		},
+
+		// 废弃部分
+		// //获取最后消息
+		// getLastMsg: function(arr, i) {
+		// 	uni.request({
+		// 		url: this.serverUrl + '/index/getlastmsg',
+		// 		data: {
+		// 			uid: this.uid,
+		// 			fid: arr[i].id,
+		// 			token: this.token
+		// 		},
+		// 		method: 'POST',
+		// 		success: data => {
+		// 			// console.log(data);
+		// 			let status = data.data.status;
+		// 			if (status == 200) {
+		// 				let res = data.data.result;
+		// 				if (res.types == 0) {
+		// 					//文字
+		// 				} else if (res.types == 1) {
+		// 					res.message = '[图片]';
+		// 				} else if (res.types == 2) {
+		// 					res.message = '[语音]';
+		// 				} else if (res.types == 3) {
+		// 					res.message = '[位置]';
+		// 				}
+		// 				let e = arr[i];
+		// 				e.msg = res.message;
+		// 				arr.splice(i, 1, e);
+		// 				// console.log(res);
+		// 			} else if (status == 500) {
+		// 				uni.showToast({
+		// 					title: '服务器出错啦！',
+		// 					icon: 'none',
+		// 					duration: 2000
+		// 				});
+		// 			} else if (status == 300) {
+		// 				//token过期跳回登录页面
+		// 				uni.navigateTo({
+		// 					url: '../login/login?name=' + this.myname
+		// 				});
+		// 			}
+		// 		}
+		// 	});
+		// },
+		// //未读消息数
+		// getUnread: function(arr, i) {
+		// 	uni.request({
+		// 		url: this.serverUrl + '/index/unreadmsg',
+		// 		data: {
+		// 			uid: this.uid,
+		// 			fid: arr[i].id,
+		// 			token: this.token
+		// 		},
+		// 		method: 'POST',
+		// 		success: data => {
+		// 			// console.log(data);
+		// 			let status = data.data.status;
+		// 			if (status == 200) {
+		// 				let res = data.data.result;
+		// 				let e = arr[i];
+		// 				e.tip = res;
+		// 				arr.splice(i, 1, e);
+		// 				// console.log(res);
+		// 			} else if (status == 500) {
+		// 				uni.showToast({
+		// 					title: '服务器出错啦！',
+		// 					icon: 'none',
+		// 					duration: 2000
+		// 				});
+		// 			} else if (status == 300) {
+		// 				//token过期跳回登录页面
+		// 				uni.navigateTo({
+		// 					url: '../login/login?name=' + this.myname
+		// 				});
+		// 			}
+		// 		}
+		// 	});
+		// },
+
 		//socket模块
 		//进行socket注册
 		join: function(uid) {
@@ -339,15 +349,43 @@ export default {
 				} else if (msg.types == 3) {
 					nmsg = '[位置]';
 				}
-				
+
 				for (var i = 0; i < this.friends.length; i++) {
-					if(this.friends[i].id == fromid) {
+					if (this.friends[i].id == fromid) {
 						let e = this.friends[i];
 						e.lastTime = new Date();
 						e.msg = nmsg;
 						e.tip++;
 						//删除原来的数据项
-						this.friends.splice(i,1);
+						this.friends.splice(i, 1);
+						//新消息插入到顶部
+						this.friends.unshift(e);
+					}
+				}
+			});
+		},
+		//群即时消息接收
+		groupSocket: function() {
+			this.socket.on('groupmsg', (msg, gid, name) => {
+				let nmsg = '';
+				if (msg.types == 0) {
+					nmsg = msg.message;
+				} else if (msg.types == 1) {
+					nmsg = '[图片]';
+				} else if (msg.types == 2) {
+					nmsg = '[语音]';
+				} else if (msg.types == 3) {
+					nmsg = '[位置]';
+				}
+
+				for (var i = 0; i < this.friends.length; i++) {
+					if (this.friends[i].id == gid) {
+						let e = this.friends[i];
+						e.lastTime = new Date();
+						e.msg = name+ ':' +nmsg;
+						e.tip++;
+						//删除原来的数据项
+						this.friends.splice(i, 1);
 						//新消息插入到顶部
 						this.friends.unshift(e);
 					}
@@ -482,6 +520,19 @@ export default {
 			color: $uni-text-color-inverse;
 			line-height: 36rpx;
 			text-align: center;
+		}
+
+		.groupm {
+			position: absolute;
+			z-index: 10;
+			bottom: 8rpx;
+			right: 0;
+			width: 16rpx;
+			height: 16rpx;
+			background-color: $uni-color-primary;
+			border-radius: 8rpx;
+			opacity: 0.8;
+			box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.2);
 		}
 	}
 
