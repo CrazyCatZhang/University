@@ -4,7 +4,12 @@ var dbserver = require('../dao/dbserver');
 //获取好友列表
 exports.getFriend = function (req, res) {
     let data = req.body;
-    dbserver.getUsers(data, res);
+    // dbserver.getUsers(data, res);
+    if (data.state == 0) {
+        dbserver.getUsers(data, res);
+    } else if (data.state == 1) {
+        dbserver.getUsers1(data, res);
+    }
 }
 
 //获取最后一条消息
